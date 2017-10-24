@@ -6,7 +6,7 @@ class PetAPI(MethodView):
 
     pets = [dict(id=pet_id, name=name,
         links=[dict(rel="self", href="/pets/%d" % pet_id), ]) for
-        pet_id, name in enumerate(("Mac", "Leo", "Brownie", ))
+        pet_id, name in enumerate(("Mac", "Leo", "Brownie", ), 1)
     ]
 
 
@@ -31,13 +31,23 @@ class PetAPI(MethodView):
             abort(400)
         if pet_id and pet_id < len(self.pets):
             pet = self.pets[pet_id-1]
-            pet["name"] = request["name"]
-            return jsonify({"pet": pet), 200
+            pet["name"] = request.json["name"]
+            return jsonify({"pet": pet}), 200
+        return None, 200
+
+    def patch(self, pet_id=None):  # for "update" you can use PATCH for individual attribute updates
+        if not request.json or not "name" in request.json:
+            abort(400)
+        if pet_id and pet_id < len(self.pets):
+            pet = self.pets[pet_id-1]
+            pet["name"] = request.json["name"]
+            return jsonify({"pet": pet}), 200
         return None, 200
 
     def delete(self, pet_id=None):
         if pet_id:
-            return jsonify({"pet": self.pets[pet_id-1]}), 200
+            del self.pets[pet_id - 1]
+            return jsonify({}), 204
         return jsonify({"pets": self.pets}), 200
 
 
