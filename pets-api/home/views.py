@@ -6,4 +6,3 @@ home_app = Blueprint("home_app", __name__)
 def home():
     return "Hello World"
 
-

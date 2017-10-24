@@ -10,11 +10,13 @@ RUN apt-get update && apt-get install -y \
 
 RUN mkdir /opt/pets-api
 
-WORKING /opt/pets-api
-ADD . .
+WORKDIR /opt/pets-api
+Add requirements.txt .
 
 RUN pip install -r requirements.txt
 EXPOSE 5000
 
-CMD python manage.py runserver
+ADD . .
+#CMD python manage.py runserver
+CMD FLASK_APP=/opt/pets-api/main.py flask run -h ${IP:-0.0.0.0} -p ${PORT:-5000} --debugger --reload
 
