@@ -1,8 +1,12 @@
 from flask.views import MethodView
 from flask import jsonify, request, abort
 
+from app.decorators import app_required
+
 
 class PetAPI(MethodView):
+
+    decorators = [app_required, ]
 
     pets = [dict(id=pet_id, name=name,
         links=[dict(rel="self", href="/pets/%d" % pet_id), ]) for
