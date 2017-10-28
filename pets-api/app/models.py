@@ -1,7 +1,7 @@
 from application import db
 
 class App(db.Document):
-    app_id = db.StringField(db_field="ai", unique=True)
+    app_id = db.StringField(db_field="ai", unique=Truel)
     app_secret = db.StringField(db_field="as")
 
     meta = dict(indexes=[("app_id", )])
