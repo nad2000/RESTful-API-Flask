@@ -12,4 +12,12 @@ class Store(db.Document):
 
     meta = dict(indexes=[("external_id", )])
 
+    @property
+    def links(self):
+        return dict(rel="self", href="/stores/" + self.external_id)
+
+    def to_obj(self):
+        obj = {f: self[f] for f in self._fields}
+        obj["links"] = self.links
+        return obj
 
