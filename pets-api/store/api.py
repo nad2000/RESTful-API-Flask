@@ -1,7 +1,14 @@
 from flask.views import MethodView
-from flask import jsonify, request, abort
+from flask import jsonify, request, abort, render_template
+
+import uuid
+import json
+from jsonschema import Draft4Validator
+from jsonschema.exceptions import best_match
 
 from app.decorators import app_required
+from store.models import Store
+from store.schema import schema
 
 
 class StoreAPI(MethodView):
@@ -13,30 +20,46 @@ class StoreAPI(MethodView):
         store_id, name in enumerate(("Mac", "Leo", "Brownie", ), 1)
     ]
 
+    def __init__(self):
+        if request.method not in ["GET", "DELETE", ] and not request.json:
+            abort(400)
+
     def get(self, store_id=None):
         if store_id:
-            return jsonify({"store": self.stores[store_id-1]}), 200
-        return jsonify({"stores": self.stores}), 200
+            store = Store.objects.filter(external_id=store_id, live=True).first()
+            if store:
+                return jsonify(dict(result="ok", store=store.to_obj())), 200
+            return jsonify({"result": "not found", "external_id": store_id}), 404
+
+        stores = Store.objects.filter(live=True)
+        return jsonify(dict(result="ok", store=[s.to_obj() for s in stores])), 200
 
     def post(self):
+        data = request.json
+        error = best_match(Draft4Validator(schema).iter_errors(data))
+
+        if error:
+            return jsonify(dict(error=error.message)), 400
+
+        store = Store(external_id=str(uuid.uuid4()), **data)
+        store.save()
+
+        if store:
+            return jsonify(dict(result="ok", store=store.to_obj())), 201
+        return jsonify(dict(result="error", error="Failed to create a store.")), 400
+
+    def put(self, store_id):  # for "update" you can use PATCH for individual attribute updates
+        store = Store.objects.filter(external_id=store_id, live=True).first()
+        if not store:
+            return jsonify({"result": "not found", "external_id": store_id}), 404
+        data = request.json
         if not request.json or not "name" in request.json:
             abort(400)
-
-        store_id = len(self.stores)+1
-        store = dict(id=store_id, name=request.json["name"],
-            links=[dict(rel="self", href="/stores/%d" % store_id), ])
-        self.stores.append(store)
-
-        return jsonify(dict(store=store)), 201
-
-    def put(self, store_id=None):  # for "update" you can use PATCH for individual attribute updates
-        if not request.json or not "name" in request.json:
-            abort(400)
-        if store_id and store_id < len(self.stores):
-            store = self.stores[store_id-1]
-            store["name"] = request.json["name"]
-            return jsonify({"store": store}), 200
-        return None, 200
+        error = best_match(Draft4Validator(schema).iter_errors(data))
+        if error:
+            return jsonify(dict(error=error.message)), 400
+        store.update(**data)
+        return jsonify(dict(result="ok", store=store.to_obj())), 200
 
     def patch(self, store_id=None):  # for "update" you can use PATCH for individual attribute updates
         if not request.json or not "name" in request.json:
