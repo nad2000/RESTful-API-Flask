@@ -70,8 +70,10 @@ class StoreAPI(MethodView):
             return jsonify({"store": store}), 200
         return None, 200
 
-    def delete(self, store_id=None):
-        if store_id:
-            del self.stores[store_id - 1]
-            return jsonify({}), 204
-        return jsonify({"stores": self.stores}), 200
+    def delete(self, store_id):
+        store = Store.objects.filter(external_id=store_id, live=True).first()
+        if not store:
+            return jsonify({"result": "not found", "external_id": store_id}), 404
+        store.live = False
+        store.save()
+        return jsonify({"result": "deleted", "external_id": store_id}), 204
