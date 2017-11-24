@@ -21,6 +21,7 @@ class StoreAPI(MethodView):
     ]
 
     def __init__(self):
+        self.STORES_PER_PAGE = 5
         if request.method not in ["GET", "DELETE", ] and not request.json:
             abort(400)
 
@@ -32,7 +33,20 @@ class StoreAPI(MethodView):
             return jsonify({"result": "not found", "external_id": store_id}), 404
 
         stores = Store.objects.filter(live=True)
-        return jsonify(dict(result="ok", store=[s.to_obj() for s in stores])), 200
+        page = int(request.args.get("page", 1))
+        stores = stores.paginate(page=page, per_page=self.STORES_PER_PAGE)
+        links = [
+            dict(rel="self", href="/stores/?page=%s" % page),
+        ]
+        if stores.has_prev:
+            links.append(dict(rel="previous", href="/stores/?page=%s" % stores.prev_num))
+        if stores.has_next:
+            links.append(dict(rel="next", href="/stores/?page=%s" % stores.next_num))
+        return jsonify(dict(
+            result="ok",
+            links=links,
+            store=[s.to_obj() for s in stores.items]
+        )), 200
 
     def post(self):
         data = request.json
