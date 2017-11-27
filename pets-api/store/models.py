@@ -18,7 +18,7 @@ class Store(db.Document):
         return dict(rel="self", href="/stores/" + self.external_id)
 
     def to_obj(self):
-        obj = {f: self[f] for f in self._fields if f not in ("_id", "id", )}
+        obj = {"id" if f == "external_id" else f: self[f] for f in self._fields if f not in ("_id", "id", )}
         obj["links"] = self.links
         return obj
 

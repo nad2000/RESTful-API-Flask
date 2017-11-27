@@ -30,7 +30,7 @@ class StoreAPI(MethodView):
             store = Store.objects.filter(external_id=store_id, live=True).first()
             if store:
                 return jsonify(dict(result="ok", store=store.to_obj())), 200
-            return jsonify({"result": "not found", "external_id": store_id}), 404
+            return jsonify({"result": "not found", "id": store_id}), 404
 
         stores = Store.objects.filter(live=True)
         page = int(request.args.get("page", 1))
@@ -67,12 +67,13 @@ class StoreAPI(MethodView):
         if not store:
             return jsonify({"result": "not found", "external_id": store_id}), 404
         data = request.json
-        if not request.json or not "name" in request.json:
+        if not request.json:
             abort(400)
         error = best_match(Draft4Validator(schema).iter_errors(data))
         if error:
             return jsonify(dict(error=error.message)), 400
         store.update(**data)
+        store.reload()
         return jsonify(dict(result="ok", store=store.to_obj())), 200
 
     def patch(self, store_id=None):  # for "update" you can use PATCH for individual attribute updates
