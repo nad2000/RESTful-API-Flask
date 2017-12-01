@@ -67,7 +67,7 @@ class StoreAPI(MethodView):
         if not store:
             return jsonify({"result": "not found", "external_id": store_id}), 404
         data = request.json
-        if not request.json:
+        if not data:
             abort(400)
         error = best_match(Draft4Validator(schema).iter_errors(data))
         if error:
