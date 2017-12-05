@@ -10,6 +10,9 @@ from app.decorators import app_required
 from pet.models import Pet
 from pet.schema import schema
 
+from store.models import Store
+from datetime import datetime
+
 
 class PetAPI(MethodView):
 
@@ -52,8 +55,23 @@ class PetAPI(MethodView):
         if error:
             return jsonify(dict(error=error.message)), 400
 
+        store = Store.objects.filter(external_id=data.get('store')).first()
+        if not store:
+            error = {
+                "code": "STORE_NOT_FOUND"
+            }
+            return jsonify({'error': error}), 400
+        data["store"] = store
+
+        try:
+            data["received_date"] = datetime.strptime(
+                data.get('received_date'), "%Y-%m-%dT%H:%M:%SZ")
+        except:
+            return jsonify({"error": "INVALID_DATE"}), 400
+
         pet = Pet(external_id=str(uuid.uuid4()), **data)
         pet.save()
+        pet.reload()
 
         if pet:
             return jsonify(dict(result="ok", pet=pet.to_obj())), 201

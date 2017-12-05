@@ -23,11 +23,12 @@ class Pet(db.Document):
 
     @property
     def links(self):
-        return dict(rel="self", href="/stores/" + self.external_id)
+        return dict(rel="self", href="/pets/" + self.external_id)
 
     def to_obj(self):
         obj = {
-            "id" if f == "external_id" else f: self[f]
+            "id" if f == "external_id" else f:  self.store.to_obj()
+            if f == "store" else str(self[f]) if f == "price" else self[f]
             for f in self._fields if f not in (
                 "_id",
                 "id",
