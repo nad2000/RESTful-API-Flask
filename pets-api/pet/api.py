@@ -32,7 +32,7 @@ class PetAPI(MethodView):
 
         pets = Pet.objects.filter(live=True)
         page = int(request.args.get("page", 1))
-        pets = pets.paginate(page=page, per_page=self.pets_PER_PAGE)
+        pets = pets.paginate(page=page, per_page=self.PETS_PER_PAGE)
         links = [
             dict(rel="self", href="/pets/?page=%s" % page),
         ]
