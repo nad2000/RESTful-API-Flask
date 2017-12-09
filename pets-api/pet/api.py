@@ -88,6 +88,23 @@ class PetAPI(MethodView):
         error = best_match(Draft4Validator(schema).iter_errors(data))
         if error:
             return jsonify(dict(error=error.message)), 400
+
+        if "store" in data:
+            store = Store.objects.filter(external_id=data["store"]).first()
+            if not store:
+                error = {
+                    "code": "STORE_NOT_FOUND"
+                }
+                return jsonify({'error': error}), 400
+            data["store"] = store
+
+        if "received_date" in data:
+            try:
+                data["received_date"] = datetime.strptime(
+                    data.get('received_date'), "%Y-%m-%dT%H:%M:%SZ")
+            except:
+                return jsonify({"error": "INVALID_DATE"}), 400
+
         pet.update(**data)
         pet.reload()
         return jsonify(dict(result="ok", pet=pet.to_obj())), 200
