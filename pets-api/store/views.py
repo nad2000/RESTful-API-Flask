@@ -17,3 +17,7 @@ store_app.add_url_rule(
         "PUT",
         "DELETE",
     ])
+store_app.add_url_rule(
+    "/stores/<store_id>/pets/", view_func=store_view, methods=[
+        "GET",
+    ])

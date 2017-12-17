@@ -6,7 +6,7 @@ from application import create_app
 app = create_app()
 manager = Manager(app)
 
-managet.add_command("runserver", Server(
+manager.add_command("runserver", Server(
     user_debugger = True,
     use_reloader = True,
     host = os.getenv("IP", "0.0.0.0"),

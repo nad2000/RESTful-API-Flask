@@ -30,18 +30,25 @@ class PetAPI(MethodView):
                 return jsonify(dict(result="ok", pet=pet.to_obj())), 200
             return jsonify({"result": "not found", "id": pet_id}), 404
 
+        pet_href = "/pets/?page=%s"
         pets = Pet.objects.filter(live=True)
+        # add filters:
+        for f in ["species", "breed", "name", ]:
+            v = request.args.get(f)
+            if v:
+                pets = pets.filter(**{f: v})
+                pet_href += '&' + f + '=' + v
         page = int(request.args.get("page", 1))
         pets = pets.paginate(page=page, per_page=self.PETS_PER_PAGE)
         links = [
-            dict(rel="self", href="/pets/?page=%s" % page),
+            dict(rel="self", href=pet_href % page),
         ]
         if pets.has_prev:
             links.append(
-                dict(rel="previous", href="/pets/?page=%s" % pets.prev_num))
+                dict(rel="previous", href=pet_href % pets.prev_num))
         if pets.has_next:
             links.append(
-                dict(rel="next", href="/pets/?page=%s" % pets.next_num))
+                dict(rel="next", href=pet_href % pets.next_num))
         return jsonify(
             dict(
                 result="ok",

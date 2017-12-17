@@ -9,6 +9,7 @@ from jsonschema.exceptions import best_match
 from app.decorators import app_required
 from store.models import Store
 from store.schema import schema
+from pet.models import Pet
 
 
 class StoreAPI(MethodView):
@@ -22,18 +23,48 @@ class StoreAPI(MethodView):
 
     def __init__(self):
         self.STORES_PER_PAGE = 5
+        self.PETS_PER_PAGE = 5
         if request.method not in ["GET", "DELETE", ] and not request.json:
             abort(400)
 
     def get(self, store_id=None):
+        page = int(request.args.get("page", 1))
         if store_id:
             store = Store.objects.filter(external_id=store_id, live=True).first()
             if store:
+                if "pets" in request.url:
+                    pets = Pet.objects.filter(store=store, live=True)
+                    pets = pets.paginate(
+                        page=page, per_page=self.PETS_PER_PAGE)
+                    links = [
+                        dict(
+                            rel="self",
+                            href="/stores/%s/pets/?page=%s" % (store_id,
+                                                               page)),
+                    ]
+                    if pets.has_prev:
+                        links.append(
+                            dict(
+                                rel="previous",
+                                href="/stores/%s/pets/?page=%s" %
+                                (store_id, pets.prev_num)))
+                    if pets.has_next:
+                        links.append(
+                            dict(
+                                rel="next",
+                                href="/stores/%s/pets/?page=%s" %
+                                (store_id, pets.next_num)))
+                    return jsonify(
+                        dict(
+                            result="ok",
+                            links=links,
+                            store=store.to_obj(),
+                            pets=[p.to_obj(nostore=True) for p in pets.items])), 200
+
                 return jsonify(dict(result="ok", store=store.to_obj())), 200
             return jsonify({"result": "not found", "id": store_id}), 404
 
         stores = Store.objects.filter(live=True)
-        page = int(request.args.get("page", 1))
         stores = stores.paginate(page=page, per_page=self.STORES_PER_PAGE)
         links = [
             dict(rel="self", href="/stores/?page=%s" % page),

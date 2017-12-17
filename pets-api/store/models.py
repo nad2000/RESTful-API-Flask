@@ -15,7 +15,10 @@ class Store(db.Document):
 
     @property
     def links(self):
-        return dict(rel="self", href="/stores/" + self.external_id)
+        return [
+            dict(rel="self", href="/stores/" + self.external_id),
+            dict(rel="pets", href="/stores/" + self.external_id + "/pets/"),
+        ]
 
     def to_obj(self):
         obj = {"id" if f == "external_id" else f: self[f] for f in self._fields if f not in ("_id", "id", )}
